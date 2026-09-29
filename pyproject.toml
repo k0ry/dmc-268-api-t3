@@ -2,7 +2,46 @@
 name = "dmc-268-api-t3"
 version = "0.1.0"
 description = "FastAPI backend for DMC-268 Team 3"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.110.0",
-    "uvicorn>=0.28.0"
+    "ollama>=0.6.2",
+    "psycopg[binary]>=3.3.5",
+    "sqlalchemy>=2.0.52",
+    "uvicorn>=0.28.0",
 ]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pylint>=4.0.8",
+    "pytest>=9.1.1",
+    "ruff>=0.16.6",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pylint.main]
+py-version = "3.12"
+
+# Docstrings are intentionally not required for this minimal skeleton.
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+]
+
+[tool.pylint.format]
+max-line-length = 100
