@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from urllib.parse import quote
 
 
 @dataclass(frozen=True)
@@ -13,11 +14,13 @@ class Settings:  # pylint: disable=too-many-instance-attributes
     eurorouter_base_url: str
     eurorouter_api_keys: list[str]
     eurorouter_model: str
+    redis_url: str
 
     @property
     def database_url(self) -> str:
         return (
-            f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
+            f"postgresql+psycopg://{quote(self.postgres_user, safe='')}:"
+            f"{quote(self.postgres_password, safe='')}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
@@ -35,6 +38,7 @@ def load_settings() -> Settings:
             key.strip() for key in os.getenv("EUROROUTER_API_KEYS", "").split(",") if key.strip()
         ],
         eurorouter_model=os.getenv("EUROROUTER_MODEL", "gpt-4o-mini"),
+        redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
     )
 
 
