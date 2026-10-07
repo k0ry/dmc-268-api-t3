@@ -1,6 +1,6 @@
 {
-  "schema_version": "2.0.0",
-  "run_id": "contract-test-run-1",
+  "schema_version": "1.0.0",
+  "run_id": "training-run-1",
   "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "coverage": {
@@ -9,31 +9,20 @@
   },
   "findings": [
     {
-      "title": "Division by zero for an empty set",
+      "title": "Деление на ноль при пустом наборе",
       "severity": "medium",
       "anchor": {
         "path": "example.py",
         "side": "RIGHT",
         "line": 3
       },
-      "scenario": "Call ratio(10, 0).",
-      "expected": "Return 0, as before the change.",
-      "actual": "Raise ZeroDivisionError.",
-      "evidence": "The count guard was removed; line 3 divides unconditionally.",
-      "impact": "Calculating a ratio for an empty set raises an exception.",
-      "suggestion": "Preserve zero-count handling according to the contract.",
-      "rule_id": "correctness.zero-division",
-      "related_changed_lines": [
-        {
-          "path": "example.py",
-          "side": "RIGHT",
-          "line": 3
-        }
-      ],
-      "confidence": 0.95
+      "scenario": "Вызов ratio(10, 0).",
+      "expected": "Возвращается 0, как до изменения.",
+      "actual": "Возникает ZeroDivisionError.",
+      "evidence": "Удалена проверка count; строка 3 делит без условия.",
+      "impact": "Расчёт для пустого набора завершается исключением.",
+      "suggestion": "Сохранить обработку нулевого count согласно контракту."
     }
   ],
-  "hypotheses": [],
-  "merge_base_sha": "cccccccccccccccccccccccccccccccccccccccc",
-  "rules_version": "project-rules/1"
+  "hypotheses": []
 }

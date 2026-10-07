@@ -1,20 +1,16 @@
-## Change
+## Изменение
 
-<The task solved and observable behavior before/after.>
+<Какая задача решена, наблюдаемое поведение до/после.>
 
-## Related issues
+## Связанные задачи
 
 Closes #<issue>
 
-## Verification
+## Проверки
 
-- <Command — actual result.>
-- <Skipped check — reason and required environment.>
+- <Команда — фактический результат.>
+- <Пропущенная проверка — причина и необходимая среда.>
 
-## Reviewer notes
+## Для ревьюера
 
-<Contract changes, migrations, rollout order, or material limitations; remove this section if unnecessary.>
-
-## Review ownership
-
-<Responsible component owner and required human approver from repository settings. Confirm Alexander's review requirement from project context; do not invent an account.>
+<Изменения контрактов, миграции, порядок внедрения или материальные ограничения; удалить раздел, если не нужен.>

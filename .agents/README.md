@@ -1,32 +1,34 @@
-# AI-скиллы и стандарты backend-разработки
+# Инструменты AI-разработки команды 3
 
-`.agents` — рабочий пакет правил, промптов и шаблонов для команды. Он согласован с [System Design v1, a9277b9](https://github.com/larchanka-training/dmc-268-api-t3/blob/a9277b9da2b6b066dbe889a6d5fdd1b9436cf74f/SYSTEM_DESIGN.md). Документ пока имеет статус Draft; открытые решения и связь с ранее принятыми стандартами перечислены в [контексте проекта](rules/project-context.md).
+Этот набор помогает писать и проверять код проекта. Корневой `AGENTS.md` ведёт техлид; этот пакет его не создаёт и не заменяет.
 
-## Применение
+## Как применять
 
-| Задача | Материал |
+Скиллы находятся в `skills/<name>/SKILL.md`. В агенте с поддержкой project skills выберите нужный скилл; в других инструментах явно приложите его файл и указанные в нём references. Наличие папки само по себе не гарантирует загрузку инструкций любым редактором.
+
+| Работа | Что загрузить |
 | --- | --- |
-| Реализация backend | [reviewer-backend](skills/reviewer-backend/SKILL.md) |
-| Тестирование | [reviewer-backend-tests](skills/reviewer-backend-tests/SKILL.md) |
-| Ревью diff | [reviewer-diff-review](skills/reviewer-diff-review/SKILL.md) |
-| Рабочий процесс | [workflows.md](workflows.md) |
-| Стиль и архитектура | [development.md](rules/development.md), [architecture.md](rules/architecture.md) |
-| Локальные шаблоны | [реализация](templates/implement.md), [тест-план](templates/test-plan.md), [PR](templates/pull-request.md) |
+| Изменение backend | [reviewer-backend](skills/reviewer-backend/SKILL.md) |
+| Анализ diff / ошибочных сигнатур | [reviewer-diff-review](skills/reviewer-diff-review/SKILL.md) |
+| Регрессионные и контрактные тесты | [reviewer-backend-tests](skills/reviewer-backend-tests/SKILL.md) |
+| Frontend | `.agents` в `larchanka-training/dmc-268-ui-t3` |
 
-Выберите скилл в редакторе с поддержкой project skills или приложите SKILL.md и связанные материалы вручную. Передайте задачу, контракт и критерии приёмки. Для прямого вызова модели используйте системный промпт [кодирования](prompts/coding-system.md) или [тестирования](prompts/testing-system.md) вместе с заполненным шаблоном.
+Пример запроса: «Используй `.agents/skills/reviewer-backend/SKILL.md`. Реализуй issue #N по её критериям приёмки, покажи проверки и ограничения». Для ревью: «Используй reviewer-diff-review для base/head SHA; код не изменяй».
 
-Правила покрывают FastAPI/SQLAlchemy/PostgreSQL, uv/Ruff/Pylint, RabbitMQ, VcsReader/VcsPublisher, Context Builder, LLM Gateway, проверку findings, историю и один обновляемый summary-комментарий. Разделены техническая доставка webhook, бизнес-дедупликация автоматического ревью и ручной rerun. Redis исключён из v1; выбор модели и численные лимиты остаются решениями команды.
+Общие правила: [разработка](rules/development.md), [архитектура](rules/architecture.md). Локальные шаблоны: [написание кода](templates/implement.md), [тестирование](templates/test-plan.md), [отправка на ревью](templates/pull-request.md). Проверки самого пакета: [validation](validation/README.md).
 
-## Контракт AI-ревью 2.0.0
+Учебный маршрут: [практикум и самопроверка](learning.md).
 
-Используйте [system prompt](prompts/review-system.md), [входной шаблон](prompts/review-user.md), [сигнатуры](prompts/signatures.md), [схему кандидатов](schemas/review.schema.json) и [схему доверенного контекста](schemas/review-context.schema.json).
+## Статус исходной базы
 
-Каждый кандидат связан с rule_id из неизменяемого RuleSet, проверенной позицией исходника и изменёнными строками. Валидатор проверяет версии, SHA, правила, severity, полноту анализа, позиции и точные дубликаты. Режим фильтрации сохраняет корректные кандидаты, возвращает безопасные причины отклонения и отмечает частичный результат.
+Проверено 2026-09-10: backend main `34fa08b` содержит `main.py`, `/health`, `pyproject.toml` с FastAPI/Uvicorn. PR #1 (`worktree-backend-skeleton`) предлагает `app/`, `/healthcheck`, uv, SQLAlchemy, PostgreSQL, Ollama, Ruff, Pylint и pytest. PR ещё не принят; его пути и команды нельзя считать доступными в main. Этот набор не переносит изменения из PR #1.
 
-**Версия 2.0.0 несовместима с 1.0.0.** [Правила контракта и миграции](rules/review-contract.md) разделяют кандидата модели, запись Finding и DTO API. Идентификаторы базы, lifecycle и связи истории назначает приложение. Полнота анализа, жизненный цикл ReviewRun и состояние публикации независимы. Неполный анализ не доказывает FIXED.
+Frontend main содержит React 18, TypeScript strict и Vite; ESLint, Vitest, Zod, Zustand и pnpm lockfile пока отсутствуют. Принятый целевой стек описан в правилах, но установка инструментов остаётся отдельной реализационной задачей.
 
-[Инструкции локальной проверки](validation/README.md) содержат команды строгой валидации и фильтрации. Проверки формата не заменяют оценку качества модели и интеграционные тесты сервисов.
+Открытые решения: конкретные маршруты запуска/rerun и DTO, JWT library/claims policy, брокерный клиент, механизм rate limit, Redis, подробная топология sub-network. Шаблоны обозначают проектируемые контракты и не выдают их за работающие API.
 
-## Поддержка пакета
+## Версии и источники
 
-Общие файлы синхронизируются с frontend: пять файлов prompts, обе схемы и правила project-context/review-contract. Изменяйте их совместно с потребителями контракта. Markdown пишется на английском, кроме README.md на русском. Корневой AGENTS.md ведёт техлид; приложение и инфраструктуру реализуют владельцы соответствующих задач.
+Версия пакета и промптов: `1.0.0`. Основания: задание спринта, текущие репозитории команды и локальный документ требований «GitHub Code Review Requirements RU», версия 1.0 от 2026-09-08 (FR-03, FR-05, FR-11–17, NFR-03). Документ использован как контекст, численные NFR остаются предложениями.
+
+Справка по инструментам: [skills](https://learn.chatgpt.com/docs/build-skills), [uv projects](https://docs.astral.sh/uv/guides/projects/), [Vitest](https://vitest.dev/guide/), [Skylos](https://github.com/duriantaco/skylos). Версии и команды всегда сверять с файлами рабочей ветки.

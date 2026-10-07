@@ -1,12 +1,13 @@
 ---
 name: reviewer-backend-tests
-description: Test review-service behavior and contracts, including business deduplication, context construction, candidate validation, history and summary publication. Use for the team's own backend tests.
+description: Подготавливает и выполняет регрессионные и контрактные тесты backend проекта, включая повторную доставку, rerun и ошибки AI-ревью. Использовать для тестов собственного кода, не для запуска недоверенного PR.
 ---
 
-Read [project context](../../rules/project-context.md), the affected [architecture section](../../rules/architecture.md), and [test plan](../../templates/test-plan.md). Choose cases that expose observable regressions in the affected component.
+Прочитай [правила](../../rules/development.md), затронутый контракт и [план тестов](../../templates/test-plan.md).
 
-Use real PostgreSQL uniqueness for concurrent business-key tests and configured RabbitMQ services for redelivery/crash/DLQ tests. Different delivery IDs may represent the same automatic review; a new manual action at the same SHA must remain distinct. Replace external reader/Gateway/publisher ports only at unit-test boundaries.
-
-For Context Builder test escalation/budget exhaustion, unresolved symbols and cache isolation. For rule/report changes run [contract checks](../../validation/README.md), including filtering and strict rejection. For Matcher test the successful same-PR/MR baseline, failed intervening runs and ambiguous matches; partial input cannot prove FIXED. For Publisher test update, deletion/recreation, concurrent retry and separate publication failure.
-
-Resolve pytest, lint and integration commands from project configuration. Do not execute untrusted reviewed code in the runtime service or a privileged test environment. Report unit, contract, database, broker and model results separately with actual commands and remaining prerequisites.
+- Выбери наблюдаемое поведение, которое сломается при регрессии. Объясни на одном входе, почему тест нужен.
+- Проверь manifest: main пока не содержит pytest/uv-конфигурацию PR #1. Не выдумывай существующие команды. Для учебного пакета доступны отдельные [проверки](../../validation/README.md).
+- Unit: подмени VCS/Ollama порт; проверь результат, тип ошибки и значимые побочные эффекты. Не привязывай тест к приватным вызовам без необходимости.
+- Для дедупликации добавь последовательный и конкурентный случай с реальной PostgreSQL; для RabbitMQ — redelivery/crash window. Подмена очереди доказывает только логику вызывающего слоя.
+- Для API проверь неверный ввод, отсутствующий/просроченный JWT и чужой ресурс. Различай 401 и принятую в проекте политику 403/404.
+- Запусти доступные проверки. Отчёт содержит команду, фактический результат и отдельно недоступные интеграции. Не называй учебную fixture реализацией сервиса.

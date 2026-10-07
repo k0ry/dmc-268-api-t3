@@ -1,48 +1,44 @@
-# Development rules
+# Правила разработки
 
-## Sources of decisions
+## Источники решений
 
-Read the tech lead's current instructions, the [project context](project-context.md), working branch configuration, relevant tests, and task contract. Preserve established architectural boundaries and the style of neighboring code. If the implementation differs from the target stack, state the difference explicitly; do not migrate the project as part of an unrelated task.
+Прочитай действующие инструкции техлида, конфигурацию рабочей ветки, связанные тесты и контракт задачи. Сохраняй принятые архитектурные границы и стиль соседнего кода. Если текущая реализация расходится с целевым стеком, явно укажи разницу; не мигрируй проект в рамках посторонней задачи.
 
-Do not create `AGENTS.md` for this package. Do not present an assumption as an approved ADR. A contract change must account for callers, errors, serialization, and tests on both sides.
+Не создавай `AGENTS.md` для этого пакета. Не выдавай предположение за согласованный ADR. Изменение контракта должно учитывать вызывающий код, ошибки, сериализацию и тесты обеих сторон.
 
-Write Markdown files in English, except files named `README.md`, which must be written in Russian. Apply this convention to skill descriptions, rules, prompts, and templates as well as their examples.
+## Стек и границы
 
-## Stack and boundaries
+- Frontend: TypeScript strict, React, Vite/Node.js, pnpm, ESLint, Zod для внешних данных, Zustand для общего клиентского состояния, Vitest для тестов. `vite test` в задании трактуется как Vitest, не как команда Vite. Версию Node брать из конфигурации проекта/CI; если её нет — указать пробел.
+- Backend: Python, FastAPI, SQLAlchemy, PostgreSQL, Ollama SDK; зависимости через uv, стиль через Ruff, анализ через Pylint. Версию Python и ограничения formatter брать из pyproject, не из догадок.
+- Skylos указан в стеке, но в репозиториях не настроен. Его область и поддерживаемые языки зависят от выбранной версии: проверить официальный CLI и конфигурацию до подключения; не подменять им ESLint/Ruff и не запускать выдуманную команду.
+- RabbitMQ относится к доставке работы, PostgreSQL — к долговечному состоянию. Redis пока не утверждён.
 
-- Frontend: strict TypeScript, React, Vite/Node.js, pnpm, ESLint, Zod for external data, Zustand for shared client state, and Vitest for tests. Take the Node version from project/CI configuration; report it as missing if none is specified.
-- Backend: Python, FastAPI, SQLAlchemy, PostgreSQL, and a model adapter behind LLM Gateway (the sprint named Ollama SDK); uv for dependencies, Ruff for style, and Pylint for analysis. Obtain the Python version and formatter constraints from pyproject rather than guessing.
-- Skylos complements the configured language tooling. Use the version, supported language scope, and invocation maintained by the team; it does not replace ESLint/Ruff.
-- RabbitMQ handles work delivery; PostgreSQL holds durable state. Redis is excluded from v1.
+## Кодирование
 
-## Implementation
+Разделяй transport, сценарии приложения и адаптеры инфраструктуры там, где они уже существуют. Не создавай универсальный framework для одного endpoint. Внешние DTO валидируй на границе; внутри используй типизированные доменные значения. Возвращай предсказуемые ошибки, различая неверный ввод, отсутствие прав и временный сбой зависимости.
 
-Limit functions to five arguments as specified in [project context](project-context.md). Prefer typed request/value objects for cohesive input. Keep mandatory framework signatures compatible and record justified exceptions. This maintainability rule does not by itself prove or prevent a security vulnerability.
+Не добавляй секреты, содержимое PR, JWT или полный ответ модели в логи. Для диагностики используй `run_id`, этап, идентификатор ошибки и безопасные счётчики. Не отключай линтеры глобально ради одного предупреждения.
 
-Separate transport, application use cases, and infrastructure adapters where those boundaries already exist. Do not build a generic framework for one endpoint. Validate external DTOs at the boundary and use typed domain values internally. Return predictable errors that distinguish invalid input, missing permissions, and transient dependency failures.
+SQLAlchemy: одна сессия на request/единицу работы, явные transaction boundaries, rollback при ошибке, закрытие сессии. Session не разделяется между параллельными задачами. Синхронные DB/SDK-вызовы не должны блокировать event loop; согласуй sync endpoint/threadpool либо полноценный async адаптер, не смешивай стили случайно. Сетевые операции получают timeout и ограниченные retries только для разрешённых ошибок.
 
-Do not log secrets, PR contents, JWTs, or complete model responses. Use `run_id`, stage, error identifier, and safe counters for diagnostics. Do not disable linters globally to silence one warning.
+Frontend: проверяй JSON через Zod до помещения в store; `as SomeDto` не валидирует ответ. Используй selectors и минимальное общее состояние. Старый ответ запроса не должен перезаписать выбранный пользователем новый PR/run; учитывай отмену и cleanup эффектов. Покажи loading, empty, error, partial и stale там, где они относятся к сценарию. JWT не помещай в URL, логи или произвольно выбранное persistent storage; следуй принятой схеме auth.
 
-SQLAlchemy: one session per request/unit of work, explicit transaction boundaries, rollback on failure, and session cleanup. Do not share a session between parallel tasks. Synchronous database/SDK calls must not block the event loop; choose a synchronous endpoint/thread pool or a fully asynchronous adapter consistently. Network operations need timeouts and bounded retries for allowed failures only.
+## Проверки и доставка
 
-Frontend: validate JSON with Zod before storing it; `as SomeDto` does not validate a response. Use selectors and minimal shared state. An old response must not overwrite the user's newly selected PR/run; handle cancellation and effect cleanup. Show loading, empty, error, partial, and stale states where relevant. Do not put JWTs in URLs, logs, or arbitrarily chosen persistent storage; follow the accepted authentication design.
+Сначала проверяй manifest и lockfile. `uv sync --locked` / `pnpm install --frozen-lockfile` применимы только при существующем актуальном lockfile. Не заявляй успешный тест, если команда отсутствует, окружение не готово или был только статический просмотр.
 
-## Verification and delivery
+Для исправления дефекта добавь тест наблюдаемого поведения. Для шаблонов и промптов проверяй реальные примеры вывода и отказ на некорректном результате. Не запускай недоверенный код проверяемого PR как часть сервиса AI-ревью. Тесты собственной разработки выполняются отдельно в разрешённом dev-окружении.
 
-Check the manifest and lockfile first. `uv sync --locked` and `pnpm install --frozen-lockfile` require an existing, current lockfile. Do not claim a test passed when its command is unavailable, its environment is not ready, or only a static inspection was performed.
+Коммит: `<ISSUEID>: <точная тема задачи>`, например `42: Подготовить backend-скилл`. Один логический результат на коммит, без чужих изменений. В PR укажи связанные issues, поведение, проверки с фактическим результатом и незакрытые ограничения. Отправка на ревью не означает merge или закрытие issue; статус Done после принятия командой.
 
-For a bug fix, add a test of observable behavior. For templates and prompts, check actual output examples and rejection of invalid results. Do not execute untrusted PR code as part of the AI review service. Tests of your own development run separately in an authorized development environment.
+## Почему эти правила важны
 
-Commit format: `<ISSUEID>: <exact issue title>`, for example `42: Prepare the backend skill`. Keep one logical result per commit and exclude unrelated changes. A PR lists linked issues, behavior, actual verification results, and remaining limitations. Sending work for review does not imply merging or closing an issue; mark Done after team acceptance.
-
-## Review checklist
-
-| Rule | Failure without it | Verification |
+| Правило | Ошибка без него | Как проверить понимание |
 | --- | --- | --- |
-| Fixed SHA | A report mixes two versions of a file | Verify that a push during analysis cannot alter the report snapshot |
-| Session per unit of work | Parallel requests mix transactions | Identify begin/commit/rollback boundaries |
-| Explicit timeout and retry budget | A request hangs forever or overloads VCS | Trace failure after the last attempt |
-| Validated DTO at the boundary | Invalid data spreads through the application | Construct JSON with an incorrect type |
-| Actual verification results | The team accepts unverified code | Reproduce one reported command |
+| Фиксированный SHA | Отчёт смешивает две версии файла | Объяснить, что произойдёт при push во время анализа |
+| Session на единицу работы | Параллельные запросы смешивают транзакции | Показать границы begin/commit/rollback |
+| Явный timeout и бюджет retry | Один запрос зависает навсегда или перегружает VCS | Проследить отказ после последней попытки |
+| Доверенный DTO на границе | Некорректные данные распространяются по приложению | Придумать JSON неверного типа |
+| Фактический результат проверки | Команда принимает непроверенный код | Повторить одну указанную команду |
 
-Use the [team workflow](../workflows.md). Human review and ownership follow [project context](project-context.md).
+Подробнее: [учебный маршрут](../learning.md).

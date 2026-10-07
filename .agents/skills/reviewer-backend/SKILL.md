@@ -1,14 +1,14 @@
 ---
 name: reviewer-backend
-description: Implement Python/FastAPI review-service tasks using the project's run, VCS, context, model, finding and publication boundaries. Use for backend code changes.
+description: Реализует и исправляет backend AI-ревью на Python/FastAPI с учётом транзакций, VCS, Ollama и идемпотентных запусков. Использовать для backend-кода, не для анализа чужого diff без изменений.
 ---
 
-Read [development rules](../../rules/development.md), [project context](../../rules/project-context.md), and the relevant [architecture sections](../../rules/architecture.md). Select exact paths, versions and commands from the working branch and the task's owned contracts.
+Прочитай [правила разработки](../../rules/development.md) и относящиеся к задаче разделы [архитектуры](../../rules/architecture.md).
 
-Identify the affected component: API/Orchestrator, Worker, VcsReader/Publisher, Context Builder, LLM Gateway, Finding Validator, Matcher, or persistence. Preserve logical boundaries without creating unrequested services. Keep provider/model specifics in adapters and avoid network work during imports.
+1. Установи реальную базу: main может ещё содержать `main.py`; `app/` и команды PR #1 не считаются принятыми до его merge. Прочитай pyproject, существующий endpoint/service, тест и вызывающий код. Не подменяй реализацию черновой архитектурой.
+2. Опиши вход, выход, ошибки и acceptance criteria задачи. Если меняется контракт API/VCS/event, перечисли затронутых потребителей. Для запуска укажи различие source event / transport retry / explicit rerun.
+3. Выполни минимальное согласованное изменение. Держи FastAPI validation/auth на transport-границе, сценарий запуска — в application layer, SQLAlchemy/VCS/Ollama — в адаптерах там, где слои уже введены. Не делай сетевые подключения побочным эффектом импорта.
+4. Для DB+очереди проверь crash windows, атомарную дедупликацию и порядок ack. Для SDK — sync/async совместимость, timeout, типизированные ошибки и бюджет retries. Не меняй состояние run на success до проверки/сохранения результата модели.
+5. Используй [шаблон реализации](../../templates/implement.md) и при необходимости [план тестов](../../templates/test-plan.md). Запусти доступные проверки из manifest. В отчёте перечисли выполненные команды и фактические результаты, отдельно пропущенные проверки и причины.
 
-For run creation distinguish webhook delivery IDs, the automatic business key, and manual operation keys. Check snapshot/RuleSet immutability, PostgreSQL uniqueness, queue crash windows, transient retry budgets and DLQ routing. For context tasks enforce bounded escalation and repository/path/SHA/parameter cache isolation. For matching/publication preserve the eligible successful baseline and one maintained PR/MR summary.
-
-When changing model output or DTO mapping, read [review contract](../../rules/review-contract.md). Keep candidate validation, database IDs/lifecycle, and API serialization separate. Incomplete evidence must not establish FIXED. Keep completed analysis readable if publication fails.
-
-Use the [implementation template](../../templates/implement.md) and relevant [test cases](../../templates/test-plan.md). Report changed behavior, affected contracts, actual checks and unresolved owning decisions. Mock checks do not prove PostgreSQL/RabbitMQ recovery or model quality.
+Результат: код задачи, необходимые тесты, описание контрактных изменений и готовое основание для PR. Не заявляй готовность RabbitMQ/PostgreSQL интеграции по одним mock-тестам.
